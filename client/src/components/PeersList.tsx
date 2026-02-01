@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Peer } from '../types';
 
 interface PeersListProps {
@@ -55,6 +55,8 @@ function getPeerStatusInfo(status: string | undefined): {
 }
 
 export function PeersList({ peers }: PeersListProps) {
+  const [isVisible, setIsVisible] = useState(true);
+
   const sortedPeers = useMemo(() => {
     const peerList = Object.values(peers);
 
@@ -70,29 +72,36 @@ export function PeersList({ peers }: PeersListProps) {
 
   return (
     <div className="card" style={{ marginBottom: '20px' }}>
-      <h2>
-        Extensions / Peers
-        <span className="count">{sortedPeers.length}</span>
+      <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>
+          Extensions / Peers
+          <span className="count">{sortedPeers.length}</span>
+        </span>
+        <button className="btn btn-secondary" onClick={() => setIsVisible(!isVisible)}>
+          {isVisible ? 'Hide' : 'Show'}
+        </button>
       </h2>
-      <ul>
-        {sortedPeers.length === 0 ? (
-          <li className="empty-state">Waiting for peer data...</li>
-        ) : (
-          sortedPeers.map((peer) => {
-            const { statusClass, displayStatus } = getPeerStatusInfo(peer.status);
-            return (
-              <li key={peer.peer} className="peer-item">
-                <div>
-                  <strong>{peer.peer}</strong>
-                  <br />
-                  <small style={{ color: '#888' }}>{peer.address || ''}</small>
-                </div>
-                <span className={`badge ${statusClass}`}>{displayStatus}</span>
-              </li>
-            );
-          })
-        )}
-      </ul>
+      {isVisible && (
+        <ul>
+          {sortedPeers.length === 0 ? (
+            <li className="empty-state">Waiting for peer data...</li>
+          ) : (
+            sortedPeers.map((peer) => {
+              const { statusClass, displayStatus } = getPeerStatusInfo(peer.status);
+              return (
+                <li key={peer.peer} className="peer-item">
+                  <div>
+                    <strong>{peer.peer}</strong>
+                    <br />
+                    <small style={{ color: '#888' }}>{peer.address || ''}</small>
+                  </div>
+                  <span className={`badge ${statusClass}`}>{displayStatus}</span>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      )}
     </div>
   );
 }
