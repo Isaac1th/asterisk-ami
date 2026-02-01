@@ -80,6 +80,7 @@ export interface DebugEntry {
   time: string;
   message: string;
   type: 'system' | 'error' | 'call' | 'peer' | 'event' | 'info';
+  rawData?: Record<string, unknown>;
 }
 
 // Merged call for display (combining channel legs)

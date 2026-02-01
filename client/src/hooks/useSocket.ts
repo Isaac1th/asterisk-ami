@@ -31,11 +31,11 @@ export function useSocket(): UseSocketReturn {
   const socketRef = useRef<Socket | null>(null);
 
   const addLog = useCallback(
-    (message: string, type: DebugEntry['type'] = 'info') => {
+    (message: string, type: DebugEntry['type'] = 'info', rawData?: Record<string, unknown>) => {
       const time = new Date().toLocaleTimeString();
       setDebugLog((prev) => [
         ...prev.slice(-99), // Keep last 100 entries
-        { id: ++debugIdCounter, time, message, type },
+        { id: ++debugIdCounter, time, message, type, rawData },
       ]);
     },
     []
@@ -158,10 +158,11 @@ export function useSocket(): UseSocketReturn {
         if (evt.application) details.push('app:' + evt.application);
         addLog(
           'AMI: ' + evt.event + (details.length ? ' [' + details.join(', ') + ']' : ''),
-          'event'
+          'event',
+          evt as Record<string, unknown>
         );
       } else {
-        addLog('AMI: ' + evt.event, 'event');
+        addLog('AMI: ' + evt.event, 'event', evt as Record<string, unknown>);
       }
     });
 
