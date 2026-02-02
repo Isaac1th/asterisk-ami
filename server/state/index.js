@@ -1,6 +1,7 @@
 // Shared state management
 const activeCalls = {};
 const peers = {};
+let amiConnected = false;
 
 module.exports = {
   // Raw state objects (for direct access when needed)
@@ -41,4 +42,10 @@ module.exports = {
     active_calls: Object.keys(activeCalls).length,
     peers: Object.keys(peers).length,
   }),
+
+  // AMI connection state
+  isAmiConnected: () => amiConnected,
+  setAmiConnected: (connected) => {
+    amiConnected = connected;
+  },
 };

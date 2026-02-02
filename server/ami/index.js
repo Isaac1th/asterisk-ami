@@ -21,6 +21,7 @@ function setupAmi(io, state) {
 
   ami.on("connect", () => {
     console.log("Connected to Asterisk AMI");
+    state.setAmiConnected(true);
     io.emit("ami_status", { connected: true });
 
     // Enable ALL events
@@ -38,11 +39,13 @@ function setupAmi(io, state) {
 
   ami.on("close", () => {
     console.log("AMI connection closed");
+    state.setAmiConnected(false);
     io.emit("ami_status", { connected: false });
   });
 
   ami.on("error", (err) => {
     console.log("AMI Error:", err);
+    state.setAmiConnected(false);
     io.emit("ami_status", { connected: false, error: err.message });
   });
 
