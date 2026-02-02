@@ -197,6 +197,11 @@ li:last-child {
   color: white;
 }
 
+.bg-purple {
+  background-color: #9b59b6;
+  color: white;
+}
+
 .peer-item {
   animation: slideIn 0.3s ease;
 }
