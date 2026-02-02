@@ -6,7 +6,7 @@ function setupSocket(io, ami, state) {
     console.log("Browser connected");
 
     // Send current AMI connection status
-    socket.emit("ami_status", { connected: ami.connected });
+    socket.emit("ami_status", { connected: state.isAmiConnected() });
 
     // Send current state to new connections
     socket.emit("initial_state", {
