@@ -12,6 +12,7 @@ interface ExtensionRow {
   statusText: string;
   startTime?: number;
   inCallWith?: string;
+  direction?: 'inbound' | 'outbound';
 }
 
 function formatDuration(ms: number): string {
@@ -128,6 +129,7 @@ export function CallsTable({ calls, peers }: CallsTableProps) {
             statusText,
             startTime: call.startTime,
             inCallWith: call.destination,
+            direction: (call.isOutgoing ? 'outbound' : 'inbound') as 'inbound' | 'outbound',
           };
         } else {
           // Extension is not on a call - use statusSince from peer
@@ -167,6 +169,7 @@ export function CallsTable({ calls, peers }: CallsTableProps) {
             <tr>
               <th>Extension</th>
               <th>Status</th>
+              <th>Direction</th>
               <th>Duration</th>
               <th>In Call With</th>
             </tr>
@@ -174,7 +177,7 @@ export function CallsTable({ calls, peers }: CallsTableProps) {
           <tbody>
             {extensionRows.length === 0 ? (
               <tr className="empty-row">
-                <td colSpan={4}>No extensions found</td>
+                <td colSpan={5}>No extensions found</td>
               </tr>
             ) : (
               extensionRows.map((row) => {
@@ -206,6 +209,15 @@ export function CallsTable({ calls, peers }: CallsTableProps) {
                         <span className={`status-icon ${iconClass}`}>{statusIcon}</span>
                         <span>{row.statusText}</span>
                       </div>
+                    </td>
+                    <td>
+                      {row.direction ? (
+                        <span className={`badge ${row.direction === 'inbound' ? 'bg-blue' : 'bg-purple'}`}>
+                          {row.direction === 'inbound' ? '↓ Inbound' : '↑ Outbound'}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <DurationCell startTime={row.startTime} />
                     <td className="destination-cell">{row.inCallWith || '-'}</td>
