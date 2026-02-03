@@ -5,6 +5,8 @@ const { registerHandlers } = require("./handlers");
 const { parsePjsipEndpointList } = require("./parsers");
 
 function setupAmi(io, state) {
+  let hasConnectedBefore = false;
+
   const ami = new AsteriskManager(
     config.AMI_PORT,
     config.AMI_HOST,
@@ -20,7 +22,12 @@ function setupAmi(io, state) {
   });
 
   ami.on("connect", () => {
-    console.log("Connected to Asterisk AMI");
+    if (hasConnectedBefore) {
+      console.log("Reconnected to Asterisk AMI");
+    } else {
+      console.log("Connected to Asterisk AMI");
+      hasConnectedBefore = true;
+    }
     state.setAmiConnected(true);
     io.emit("ami_status", { connected: true });
 
@@ -41,6 +48,19 @@ function setupAmi(io, state) {
     console.log("AMI connection closed");
     state.setAmiConnected(false);
     io.emit("ami_status", { connected: false });
+
+    // Clear stale call data — active calls are no longer valid
+    const staleCount = Object.keys(state.activeCalls).length;
+    if (staleCount > 0) {
+      console.log(`Clearing ${staleCount} stale active call(s)`);
+      for (const uniqueid of Object.keys(state.activeCalls)) {
+        state.deleteCall(uniqueid);
+      }
+      io.emit("initial_state", {
+        calls: [],
+        peers: state.getAllPeers(),
+      });
+    }
   });
 
   ami.on("error", (err) => {
@@ -52,6 +72,9 @@ function setupAmi(io, state) {
   // Register all event handlers
   registerHandlers(ami, io, state);
 
+  // Auto-reconnect on connection loss with exponential backoff
+  ami.keepConnected();
+
   return ami;
 }
 
@@ -59,30 +82,39 @@ function fetchInitialData(ami, state, io) {
   // Fetch SIP peers
   console.log("Fetching initial SIP peers...");
   ami.action({ action: "SIPpeers" }, (err) => {
-    if (err) console.log("SIPpeers error:", err);
-    else console.log("SIPpeers request sent");
+    try {
+      if (err) console.log("SIPpeers error:", err);
+      else console.log("SIPpeers request sent");
+    } catch (e) {
+      console.error("Error handling SIPpeers response:", e);
+    }
   });
 
   // Fetch PJSIP endpoints
   ami.action(
     { action: "Command", command: "pjsip list endpoints like ^[0-9]" },
     (err, res) => {
-      if (err) {
-        console.log("PJSIP list endpoints error:", err);
-      } else {
-        console.log(
-          "PJSIP list endpoints response:",
-          JSON.stringify(res, null, 2),
-        );
-        const output = res.output || res.content || res.$content || res.message;
-        if (output) {
-          parsePjsipEndpointList(output, state, io);
+      try {
+        if (err) {
+          console.log("PJSIP list endpoints error:", err);
         } else {
           console.log(
-            "No output found in response. Keys:",
-            Object.keys(res || {}),
+            "PJSIP list endpoints response:",
+            JSON.stringify(res, null, 2),
           );
+          const output =
+            res.output || res.content || res.$content || res.message;
+          if (output) {
+            parsePjsipEndpointList(output, state, io);
+          } else {
+            console.log(
+              "No output found in response. Keys:",
+              Object.keys(res || {}),
+            );
+          }
         }
+      } catch (e) {
+        console.error("Error handling PJSIP endpoints response:", e);
       }
     },
   );
@@ -90,8 +122,12 @@ function fetchInitialData(ami, state, io) {
   // Fetch active channels
   console.log("Fetching active channels...");
   ami.action({ action: "CoreShowChannels" }, (err) => {
-    if (err) console.log("CoreShowChannels error:", err);
-    else console.log("CoreShowChannels request sent");
+    try {
+      if (err) console.log("CoreShowChannels error:", err);
+      else console.log("CoreShowChannels request sent");
+    } catch (e) {
+      console.error("Error handling CoreShowChannels response:", e);
+    }
   });
 }
 
