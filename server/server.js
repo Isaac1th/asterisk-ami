@@ -30,3 +30,12 @@ process.on("SIGINT", () => {
   server.close();
   process.exit();
 });
+
+// Process-level error handlers to prevent silent crashes
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});

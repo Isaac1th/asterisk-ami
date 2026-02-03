@@ -23,6 +23,12 @@ function setupRoutes(app, ami, state) {
       res.sendFile(path.join(clientDistPath, "index.html"));
     });
   }
+
+  // Error-handling middleware (must be registered last)
+  app.use((err, req, res, next) => {
+    console.error("Express error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  });
 }
 
 module.exports = { setupRoutes };
