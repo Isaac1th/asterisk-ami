@@ -1,5 +1,5 @@
 // AMI connection lifecycle
-const AsteriskManager = require("asterisk-manager");
+const AsteriskManager = require("asterisk-manager-ts").default;
 const config = require("../config");
 const { registerHandlers } = require("./handlers");
 const { parsePjsipEndpointList } = require("./parsers");

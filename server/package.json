@@ -9,7 +9,7 @@
   },
   "type": "commonjs",
   "dependencies": {
-    "asterisk-manager": "^0.2.0",
+    "asterisk-manager-ts": "^1.0.0",
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
   },
