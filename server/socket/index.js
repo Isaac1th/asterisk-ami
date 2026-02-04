@@ -1,9 +1,11 @@
 // Socket.IO connection handling
 const { parsePjsipEndpointList } = require("../ami/parsers");
+const { createLogger } = require("../utils/logger");
+const log = createLogger("Socket");
 
 function setupSocket(io, ami, state) {
   io.on("connection", (socket) => {
-    console.log("Browser connected");
+    log.info("Browser connected");
 
     // Send current AMI connection status
     socket.emit("ami_status", { connected: state.isAmiConnected() });
@@ -16,7 +18,7 @@ function setupSocket(io, ami, state) {
 
     // Handle request to refresh data
     socket.on("refresh", () => {
-      console.log("Refresh requested");
+      log.debug("Refresh requested");
       ami.action({ action: "SIPpeers" });
       ami.action({ action: "CoreShowChannels" });
 
@@ -36,7 +38,7 @@ function setupSocket(io, ami, state) {
     });
 
     socket.on("disconnect", () => {
-      console.log("Browser disconnected");
+      log.info("Browser disconnected");
     });
   });
 }

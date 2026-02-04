@@ -5,6 +5,8 @@ const { Server } = require("socket.io");
 
 const config = require("./config");
 const state = require("./state");
+const { createLogger } = require("./utils/logger");
+const log = createLogger("Server");
 const { setupAmi } = require("./ami");
 const { setupSocket } = require("./socket");
 const { setupRoutes } = require("./routes");
@@ -19,13 +21,13 @@ setupSocket(io, ami, state);
 setupRoutes(app, ami, state);
 
 server.listen(config.PORT, () => {
-  console.log(`Dashboard running at http://localhost:${config.PORT}`);
-  console.log(`Health check at http://localhost:${config.PORT}/health`);
+  log.info(`Dashboard running at http://localhost:${config.PORT}`);
+  log.info(`Health check at http://localhost:${config.PORT}/health`);
 });
 
 // Graceful shutdown
 process.on("SIGINT", () => {
-  console.log("\nShutting down...");
+  log.info("Shutting down...");
   ami.disconnect();
   server.close();
   process.exit();
@@ -33,9 +35,9 @@ process.on("SIGINT", () => {
 
 // Process-level error handlers to prevent silent crashes
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught exception:", err);
+  log.error("Uncaught exception:", err);
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled rejection:", reason);
+  log.error("Unhandled rejection:", reason);
 });

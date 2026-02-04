@@ -1,6 +1,8 @@
 // Express route definitions
 const path = require("path");
 const fs = require("fs");
+const { createLogger } = require("../utils/logger");
+const log = createLogger("Routes");
 
 function setupRoutes(app, ami, state) {
   // Health check endpoint
@@ -26,7 +28,7 @@ function setupRoutes(app, ami, state) {
 
   // Error-handling middleware (must be registered last)
   app.use((err, req, res, next) => {
-    console.error("Express error:", err);
+    log.error("Express error:", err);
     res.status(500).json({ error: "Internal server error" });
   });
 }
