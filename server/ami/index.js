@@ -4,6 +4,9 @@ const config = require("../config");
 const { registerHandlers } = require("./handlers");
 const { parsePjsipEndpointList } = require("./parsers");
 const { sanitizeEvent } = require("../utils/sanitize");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("AMI");
 
 function setupAmi(io, state) {
   let hasConnectedBefore = false;
@@ -20,16 +23,16 @@ function setupAmi(io, state) {
   ami.on("managerevent", (evt) => {
     if (config.DEBUG_EVENTS) {
       const sanitized = sanitizeEvent(evt);
-      console.log(`[AMI Event] ${evt.event}:`, JSON.stringify(sanitized, null, 2));
+      log.debug(`Event ${evt.event}`, sanitized);
       io.emit("debug_event", sanitized);
     }
   });
 
   ami.on("connect", () => {
     if (hasConnectedBefore) {
-      console.log("Reconnected to Asterisk AMI");
+      log.info("Reconnected to Asterisk AMI");
     } else {
-      console.log("Connected to Asterisk AMI");
+      log.info("Connected to Asterisk AMI");
       hasConnectedBefore = true;
     }
     state.setAmiConnected(true);
@@ -38,9 +41,9 @@ function setupAmi(io, state) {
     // Enable ALL events
     ami.action({ action: "Events", eventmask: "on" }, (err, res) => {
       if (err) {
-        console.log("Failed to enable events:", err);
+        log.error("Failed to enable events", err);
       } else {
-        console.log("Events enabled:", res);
+        log.debug("Events enabled", res);
       }
     });
 
@@ -49,14 +52,14 @@ function setupAmi(io, state) {
   });
 
   ami.on("close", () => {
-    console.log("AMI connection closed");
+    log.warn("AMI connection closed");
     state.setAmiConnected(false);
     io.emit("ami_status", { connected: false });
 
     // Clear stale call data — active calls are no longer valid
     const staleCount = Object.keys(state.activeCalls).length;
     if (staleCount > 0) {
-      console.log(`Clearing ${staleCount} stale active call(s)`);
+      log.info(`Clearing ${staleCount} stale active call(s)`);
       for (const uniqueid of Object.keys(state.activeCalls)) {
         state.deleteCall(uniqueid);
       }
@@ -68,7 +71,7 @@ function setupAmi(io, state) {
   });
 
   ami.on("error", (err) => {
-    console.log("AMI Error:", err);
+    log.error("AMI error", err);
     state.setAmiConnected(false);
     io.emit("ami_status", { connected: false, error: err.message });
   });
@@ -84,13 +87,13 @@ function setupAmi(io, state) {
 
 function fetchInitialData(ami, state, io) {
   // Fetch SIP peers
-  console.log("Fetching initial SIP peers...");
+  log.debug("Fetching initial SIP peers...");
   ami.action({ action: "SIPpeers" }, (err) => {
     try {
-      if (err) console.log("SIPpeers error:", err);
-      else console.log("SIPpeers request sent");
+      if (err) log.error("SIPpeers error", err);
+      else log.debug("SIPpeers request sent");
     } catch (e) {
-      console.error("Error handling SIPpeers response:", e);
+      log.error("Error handling SIPpeers response", e);
     }
   });
 
@@ -100,37 +103,31 @@ function fetchInitialData(ami, state, io) {
     (err, res) => {
       try {
         if (err) {
-          console.log("PJSIP list endpoints error:", err);
+          log.error("PJSIP list endpoints error", err);
         } else {
-          console.log(
-            "PJSIP list endpoints response:",
-            JSON.stringify(res, null, 2),
-          );
+          log.debug("PJSIP list endpoints response", res);
           const output =
             res.output || res.content || res.$content || res.message;
           if (output) {
             parsePjsipEndpointList(output, state, io);
           } else {
-            console.log(
-              "No output found in response. Keys:",
-              Object.keys(res || {}),
-            );
+            log.warn("No output found in PJSIP response", { keys: Object.keys(res || {}) });
           }
         }
       } catch (e) {
-        console.error("Error handling PJSIP endpoints response:", e);
+        log.error("Error handling PJSIP endpoints response", e);
       }
     },
   );
 
   // Fetch active channels
-  console.log("Fetching active channels...");
+  log.debug("Fetching active channels...");
   ami.action({ action: "CoreShowChannels" }, (err) => {
     try {
-      if (err) console.log("CoreShowChannels error:", err);
-      else console.log("CoreShowChannels request sent");
+      if (err) log.error("CoreShowChannels error", err);
+      else log.debug("CoreShowChannels request sent");
     } catch (e) {
-      console.error("Error handling CoreShowChannels response:", e);
+      log.error("Error handling CoreShowChannels response", e);
     }
   });
 }

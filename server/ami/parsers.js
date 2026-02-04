@@ -1,4 +1,6 @@
 // CLI output parsers for AMI responses
+const { createLogger } = require("../utils/logger");
+const log = createLogger("AMI-Parsers");
 
 function parsePjsipEndpointList(output, state, io) {
   const lines = Array.isArray(output) ? output : output.split("\n");
@@ -23,7 +25,7 @@ function parsePjsipEndpointList(output, state, io) {
     }
   });
 
-  console.log("[PJSIP CLI] Total peers:", Object.keys(state.peers).length);
+  log.debug("[PJSIP CLI] Total peers:", Object.keys(state.peers).length);
 }
 
 module.exports = { parsePjsipEndpointList };
