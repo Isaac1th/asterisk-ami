@@ -21,4 +21,6 @@ module.exports = {
   // Debug events are disabled in production by default for security
   DEBUG_EVENTS: process.env.DEBUG_EVENTS === "true" || isDevelopment,
   IS_DEVELOPMENT: isDevelopment,
+  // Log level: error, warn, info, debug (default: info in production, debug in development)
+  LOG_LEVEL: process.env.LOG_LEVEL || (isDevelopment ? "debug" : "info"),
 };

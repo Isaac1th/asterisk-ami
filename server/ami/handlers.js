@@ -1,11 +1,13 @@
 // AMI event handlers
+const { createLogger } = require("../utils/logger");
+const log = createLogger("AMI-Handlers");
 
 function safeHandler(name, fn) {
   return (evt) => {
     try {
       fn(evt);
     } catch (err) {
-      console.error(`[${name}] Error handling event:`, err);
+      log.error(`[${name}] Error handling event:`, err);
     }
   };
 }
@@ -15,7 +17,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "peerentry",
     safeHandler("Peer Entry", (evt) => {
-      console.log("[Peer Entry]", evt.objectname, evt.status);
+      log.debug("[Peer Entry]", `${evt.objectname} ${evt.status}`);
       const peerData = {
         peer: evt.objectname || evt.channeltype + "/" + evt.objectname,
         status: evt.status || "Unknown",
@@ -30,7 +32,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "endpointlist",
     safeHandler("PJSIP Endpoint", (evt) => {
-      console.log("[PJSIP Endpoint]", evt.objectname, evt.devicestate);
+      log.debug("[PJSIP Endpoint]", `${evt.objectname} ${evt.devicestate}`);
       // Only include numeric endpoints (extensions, not trunks)
       if (evt.objectname && /^\d+$/.test(evt.objectname)) {
         const peerData = {
@@ -48,7 +50,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "peerstatus",
     safeHandler("Peer Status Change", (evt) => {
-      console.log("[Peer Status Change]", evt.peer, evt.peerstatus);
+      log.debug("[Peer Status Change]", `${evt.peer} ${evt.peerstatus}`);
       const peerData = {
         peer: evt.peer,
         status: evt.peerstatus,
@@ -63,7 +65,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "devicestatechange",
     safeHandler("Device State", (evt) => {
-      console.log("[Device State]", evt.device, evt.state);
+      log.debug("[Device State]", `${evt.device} ${evt.state}`);
       io.emit("device_state", {
         device: evt.device,
         state: evt.state,
@@ -75,16 +77,8 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "newchannel",
     safeHandler("New Channel", (evt) => {
-      console.log(
-        "[New Channel]",
-        evt.channel,
-        evt.calleridnum,
-        "exten:",
-        evt.exten,
-        "context:",
-        evt.context,
-      );
-      console.log("[New Channel Full Event]", JSON.stringify(evt, null, 2));
+      log.debug("[New Channel]", `${evt.channel} ${evt.calleridnum} exten: ${evt.exten} context: ${evt.context}`);
+      log.debug("[New Channel Full Event]", evt);
       const callData = {
         type: "start",
         channel: evt.channel,
@@ -102,14 +96,7 @@ function registerHandlers(ami, io, state) {
         startTime: Date.now(),
       };
       state.setCall(evt.uniqueid, callData);
-      console.log(
-        "[Emitting call_update]",
-        callData.uniqueid,
-        "startTime:",
-        callData.startTime,
-        "exten:",
-        callData.exten,
-      );
+      log.debug("[Emitting call_update]", `${callData.uniqueid} startTime: ${callData.startTime} exten: ${callData.exten}`);
       io.emit("call_update", callData);
     }),
   );
@@ -118,7 +105,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "newstate",
     safeHandler("Channel State", (evt) => {
-      console.log("[Channel State]", evt.channel, evt.channelstatedesc);
+      log.debug("[Channel State]", `${evt.channel} ${evt.channelstatedesc}`);
       const call = state.getCall(evt.uniqueid);
       if (call) {
         call.state = evt.channelstatedesc;
@@ -165,15 +152,8 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "dialbegin",
     safeHandler("DialBegin", (evt) => {
-      console.log(
-        "[DialBegin]",
-        evt.channel,
-        "->",
-        evt.destchannel,
-        "dialstring:",
-        evt.dialstring,
-      );
-      console.log("[DialBegin Full]", JSON.stringify(evt, null, 2));
+      log.debug("[DialBegin]", `${evt.channel} -> ${evt.destchannel} dialstring: ${evt.dialstring}`);
+      log.debug("[DialBegin Full]", evt);
 
       const call = state.getCall(evt.uniqueid);
       if (call) {
@@ -185,7 +165,7 @@ function registerHandlers(ami, io, state) {
           if (match) call.destination = match[1];
         }
 
-        console.log("[DialBegin] Setting destination to:", call.destination);
+        log.debug("[DialBegin] Setting destination to:", call.destination);
 
         io.emit("call_update", {
           type: "update",
@@ -195,10 +175,7 @@ function registerHandlers(ami, io, state) {
           channel: evt.channel,
         });
       } else {
-        console.log(
-          "[DialBegin] WARNING: No active call found for uniqueid:",
-          evt.uniqueid,
-        );
+        log.warn("[DialBegin] No active call found for uniqueid:", evt.uniqueid);
       }
     }),
   );
@@ -207,7 +184,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "dialend",
     safeHandler("DialEnd", (evt) => {
-      console.log("[DialEnd]", evt.channel, "dialstatus:", evt.dialstatus);
+      log.debug("[DialEnd]", `${evt.channel} dialstatus: ${evt.dialstatus}`);
       const call = state.getCall(evt.uniqueid);
       if (call) {
         call.dialstatus = evt.dialstatus;
@@ -225,7 +202,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "hangup",
     safeHandler("Hangup", (evt) => {
-      console.log("[Hangup]", evt.channel, evt.cause, evt.causetxt);
+      log.debug("[Hangup]", `${evt.channel} ${evt.cause} ${evt.causetxt}`);
       state.deleteCall(evt.uniqueid);
       io.emit("call_update", {
         type: "end",
@@ -240,7 +217,7 @@ function registerHandlers(ami, io, state) {
   ami.on(
     "coreshowchannel",
     safeHandler("Active Channel", (evt) => {
-      console.log("[Active Channel]", evt.channel, evt.calleridnum);
+      log.debug("[Active Channel]", `${evt.channel} ${evt.calleridnum}`);
       // Parse duration string (format: "00:00:05") to seconds
       let durationSecs = 0;
       if (evt.duration) {
