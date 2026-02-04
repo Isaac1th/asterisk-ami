@@ -10,10 +10,15 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const isDevelopment = process.env.NODE_ENV !== "production";
+
 module.exports = {
   PORT: process.env.PORT || 3000,
   AMI_PORT: process.env.AMI_PORT || 5038,
   AMI_HOST: process.env.AMI_HOST,
   AMI_USER: process.env.AMI_USER,
   AMI_PASS: process.env.AMI_PASS,
+  // Debug events are disabled in production by default for security
+  DEBUG_EVENTS: process.env.DEBUG_EVENTS === "true" || isDevelopment,
+  IS_DEVELOPMENT: isDevelopment,
 };

@@ -3,6 +3,7 @@ const AsteriskManager = require("asterisk-manager");
 const config = require("../config");
 const { registerHandlers } = require("./handlers");
 const { parsePjsipEndpointList } = require("./parsers");
+const { sanitizeEvent } = require("../utils/sanitize");
 
 function setupAmi(io, state) {
   let hasConnectedBefore = false;
@@ -15,10 +16,13 @@ function setupAmi(io, state) {
     true,
   );
 
-  // Debug: Log ALL events coming from AMI
+  // Debug: Log and emit sanitized events (only in development or if explicitly enabled)
   ami.on("managerevent", (evt) => {
-    console.log(`[AMI Event] ${evt.event}:`, JSON.stringify(evt, null, 2));
-    io.emit("debug_event", evt);
+    if (config.DEBUG_EVENTS) {
+      const sanitized = sanitizeEvent(evt);
+      console.log(`[AMI Event] ${evt.event}:`, JSON.stringify(sanitized, null, 2));
+      io.emit("debug_event", sanitized);
+    }
   });
 
   ami.on("connect", () => {
