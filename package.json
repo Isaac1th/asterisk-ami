@@ -12,7 +12,7 @@
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
-    "test:client": "cd client && npm test",
+    "test:client": "node scripts/run-client-tests.js",
     "test:coverage": "npm run test:server -- --coverage && npm run test:client -- --coverage"
   },
   "keywords": [],
