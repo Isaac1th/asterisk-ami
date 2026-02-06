@@ -18,6 +18,12 @@ function registerHandlers(ami, io, state) {
     "peerentry",
     safeHandler("Peer Entry", (evt) => {
       log.debug("[Peer Entry]", `${evt.objectname} ${evt.status}`);
+      // Only include numeric endpoints (extensions, not trunks)
+      if (!evt.objectname || !/^\d+$/.test(evt.objectname)) {
+        log.debug("[Peer Entry] Skipping non-numeric endpoint:", evt.objectname);
+        return;
+      }
+
       const peerData = {
         peer: evt.objectname || evt.channeltype + "/" + evt.objectname,
         status: evt.status || "Unknown",
@@ -51,6 +57,16 @@ function registerHandlers(ami, io, state) {
     "peerstatus",
     safeHandler("Peer Status Change", (evt) => {
       log.debug("[Peer Status Change]", `${evt.peer} ${evt.peerstatus}`);
+      // Extract endpoint name from peer (e.g., "PJSIP/100" -> "100")
+      const peerMatch = evt.peer && evt.peer.match(/\/(.+)$/);
+      const endpointName = peerMatch ? peerMatch[1] : evt.peer;
+
+      // Only include numeric endpoints (extensions, not trunks)
+      if (!endpointName || !/^\d+$/.test(endpointName)) {
+        log.debug("[Peer Status Change] Skipping non-numeric endpoint:", endpointName);
+        return;
+      }
+
       const peerData = {
         peer: evt.peer,
         status: evt.peerstatus,

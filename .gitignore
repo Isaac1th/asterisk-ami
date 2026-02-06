@@ -3,3 +3,6 @@ node_modules/
 
 # Test coverage reports
 coverage/
+
+# Personal learning notes
+TESTING_LEARNING_PLAN.md

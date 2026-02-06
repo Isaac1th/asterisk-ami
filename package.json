@@ -4,9 +4,9 @@
   "description": "Asterisk Live Dashboard with React/TypeScript frontend",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "node scripts/dev.js",
     "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
+    "dev:client": "node scripts/run-client-dev.js",
     "build": "cd client && npm run build",
     "start": "cd server && npm start",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
